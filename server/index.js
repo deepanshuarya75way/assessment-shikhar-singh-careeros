@@ -16,6 +16,7 @@ import resumeRoutes from "./routes/resume.routes.js";
 import collegeRoutes from "./routes/collegeRoutes.js";
 import collegeExplore from "./routes/collegeExplore.js";
 import messageRoutes from "./routes/messages.js";
+import initSocket from "./socket/socket.js";
 
 dotenv.config();
 
@@ -39,13 +40,7 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("🔴 Socket disconnected:", socket.id);
-  });
-});
+initSocket(io);
 /* -------------------- MIDDLEWARE -------------------- */
 
 app.use(

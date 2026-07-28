@@ -1,83 +1,81 @@
-import Message from "../models/Message.js";
+import * as messageService from "../services/message.service.js";
 
-const userSocketMap = new Map(); // userId -> socketId
+const userSocketMap = new Map(); // userId -> Set<socketId>, supports multiple tabs
+
+function addSocket(userId, socketId) {
+  if (!userSocketMap.has(userId)) userSocketMap.set(userId, new Set());
+  userSocketMap.get(userId).add(socketId);
+}
+
+function removeSocket(userId, socketId) {
+  const set = userSocketMap.get(userId);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) userSocketMap.delete(userId);
+}
+
+function emitToUser(io, userId, event, payload) {
+  const set = userSocketMap.get(String(userId));
+  if (!set) return false;
+  set.forEach((socketId) => io.to(socketId).emit(event, payload));
+  return true;
+}
 
 export default function initSocket(io) {
   io.on("connection", (socket) => {
-    console.log("🔌 Socket connected:", socket.id);
+    console.log("🔌 socket connected:", socket.id);
 
-    // Register user
-    socket.on("register", ({ userId, role }) => {
-      userSocketMap.set(userId, socket.id);
-      socket.userId = userId;
-      socket.role = role;
-      console.log(`✅ User ${userId} (${role}) registered`);
+    socket.on("register_user", ({ userId }) => {
+      if (!userId) return;
+      socket.userId = String(userId);
+      addSocket(socket.userId, socket.id);
+      socket.emit("registered", { userId: socket.userId });
+      io.emit("user_online", { userId: socket.userId });
     });
 
-    // Send message
-    socket.on("send_message", async (data) => {
-      const { senderId, receiverId, content, senderRole, receiverRole } = data;
-
-      // ❌ student → student not allowed
-      if (senderRole === "student" && receiverRole === "student") {
-        return socket.emit("error", {
-          message: "Students cannot message each other",
-        });
-      }
+    // senderId always comes from the registered socket, never the payload —
+    // a client cannot spoof another user's messages this way.
+    socket.on("send_message", async ({ receiverId, content }) => {
+      const senderId = socket.userId;
+      if (!senderId) return socket.emit("error", { message: "Not registered" });
+      if (!receiverId) return socket.emit("error", { message: "receiverId is required" });
 
       try {
-        const message = await Message.create({
-          senderId,
-          receiverId,
-          senderRole,
-          receiverRole,
-          content,
-          read: false,
-        });
-
-        // Emit to sender
+        const message = await messageService.createMessage({ senderId, receiverId, content });
         socket.emit("message_sent", message);
-
-        // Emit to receiver if online
-        const receiverSocketId = userSocketMap.get(receiverId);
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receive_message", message);
-        }
+        emitToUser(io, receiverId, "receive_message", message);
       } catch (err) {
-        console.error("❌ Message save error:", err);
-        socket.emit("error", { message: "Failed to send message" });
+        socket.emit("error", { message: err.message || "Failed to send message" });
       }
     });
 
-    // Mark as read
-    socket.on("mark_as_read", async ({ messageId, userId }) => {
+    socket.on("mark_read", async ({ otherUserId }) => {
+      const userId = socket.userId;
+      if (!userId || !otherUserId) return;
       try {
-        await Message.updateOne(
-          { _id: messageId, receiverId: userId },
-          { $set: { read: true } }
-        );
+        await messageService.markConversationRead(userId, otherUserId);
+        emitToUser(io, otherUserId, "messages_read", { readerId: userId });
       } catch (err) {
-        console.error("❌ Mark read error:", err);
+        socket.emit("error", { message: err.message || "Failed to mark as read" });
       }
     });
 
-    // Typing indicator ✅ FIXED
-    socket.on("typing", ({ receiverId, isTyping }) => {
-      const receiverSocketId = userSocketMap.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("user_typing", {
-          senderId: socket.userId,
-          isTyping,
-        });
-      }
+    socket.on("typing_start", ({ receiverId }) => {
+      if (!socket.userId || !receiverId) return;
+      emitToUser(io, receiverId, "typing_start", { senderId: socket.userId });
     });
 
-    // Disconnect
+    socket.on("typing_stop", ({ receiverId }) => {
+      if (!socket.userId || !receiverId) return;
+      emitToUser(io, receiverId, "typing_stop", { senderId: socket.userId });
+    });
+
     socket.on("disconnect", () => {
       if (socket.userId) {
-        userSocketMap.delete(socket.userId);
-        console.log(`❌ User ${socket.userId} disconnected`);
+        removeSocket(socket.userId, socket.id);
+        if (!userSocketMap.has(socket.userId)) io.emit("user_offline", { userId: socket.userId });
       }
+      console.log("❌ socket disconnected:", socket.id);
     });
   });
 }

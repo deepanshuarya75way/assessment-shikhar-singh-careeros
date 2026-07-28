@@ -5,14 +5,13 @@
 
 import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
+import { Grid, MessageSquare } from "react-feather"
 import CounsellorProfilePopup from "./CounsellorProfilePopup"
-import { useSocket } from "../context/SocketContext"
-import { MessageCircle } from "react-feather"
 
 const CounsellorDashboard = ({ onLogout }) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { socket, registerUser } = useSocket()
+
 
   const [user, setUser] = useState(() => {
     return location.state?.user || JSON.parse(localStorage.getItem("user")) || null
@@ -30,38 +29,7 @@ const CounsellorDashboard = ({ onLogout }) => {
   // ✅ REAL messages state (no mock data)
   const [messages, setMessages] = useState([])
 
-  /* ---------------- SOCKET REGISTRATION ---------------- */
-  useEffect(() => {
-    if (user?._id && socket) {
-      registerUser(user._id, "counselor")
-    }
-  }, [user, socket, registerUser])
 
-  /* ---------------- RECEIVE MESSAGES ---------------- */
-  useEffect(() => {
-    if (!socket) return
-
-    socket.on("receive_message", (msg) => {
-      // Map backend message → existing UI structure
-      setMessages((prev) => [
-        {
-          id: msg._id,
-          studentId: msg.senderId,
-          from: msg.senderRole,
-          senderName: "Student",
-          subject: "New Message",
-          message: msg.content,
-          timestamp: new Date(msg.createdAt).toLocaleTimeString(),
-          unread: true,
-        },
-        ...prev,
-      ])
-    })
-
-    return () => {
-      socket.off("receive_message")
-    }
-  }, [socket])
 
   /* ---------------- PROFILE CHECK ---------------- */
   useEffect(() => {
@@ -526,7 +494,7 @@ const CounsellorDashboard = ({ onLogout }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -535,19 +503,23 @@ const CounsellorDashboard = ({ onLogout }) => {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">CareerOS</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <button
-                onClick={() => setActiveTab("messages")}
-                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-semibold shadow-sm shadow-purple-200 hover:bg-purple-700 transition-all duration-200"
               >
-                <span className="text-xl">💬</span>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
+                <Grid className="w-4 h-4" />
+                Dashboard
               </button>
-              <span className="text-gray-700">Welcome, {user?.email}</span>
+
+              <button
+               onClick={() => navigate("/messages")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Messages
+              </button>
+
               <button
                 onClick={() => {
                   localStorage.removeItem("user")
@@ -555,9 +527,9 @@ const CounsellorDashboard = ({ onLogout }) => {
                   navigate("/")
                   if (onLogout) onLogout()
                 }}
-                className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100"
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center text-white font-semibold hover:shadow-lg transition-shadow"
               >
-                Logout
+                {user?.email?.charAt(0).toUpperCase() || "C"}
               </button>
             </div>
           </div>
@@ -602,8 +574,6 @@ const CounsellorDashboard = ({ onLogout }) => {
                 icon: "📅",
                 badge: appointments.filter((a) => a.status === "confirmed").length,
               },
-              { id: "messages", name: "Messages", icon: "💬", badge: unreadCount },
-              { id: "profile", name: "Profile", icon: "👤" },
             ].map((tab) => (
               <button
                 key={tab.id}

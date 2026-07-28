@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import { Grid, MessageSquare } from "react-feather"
 import AvatarMenu from "./AvatarMenu"
 import ProfileCompletionPopup from "./ProfileCompletionPopup"
 import CollegeCard from "../components/CollegeCard"
@@ -272,17 +273,21 @@ const StudentDashboard = ({ onLogout }) => {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">CareerOS</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <button
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  profileCompleted
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                }`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-sm shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
               >
+                <Grid className="w-4 h-4" />
                 Dashboard
               </button>
-              <span className="text-gray-700 hidden sm:inline">Welcome, {user?.email}</span>
+
+              <button
+                onClick={() => navigate("/messages")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Messages
+              </button>
 
               <div className="relative">
                 <button

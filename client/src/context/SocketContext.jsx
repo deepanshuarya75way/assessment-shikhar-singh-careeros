@@ -1,96 +1,78 @@
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 
-import { createContext, useContext, useEffect, useState, useRef } from "react";
-import io from "socket.io-client";
+const SocketContext = createContext(null);
 
-const SocketContext = createContext();
+export function useSocket() {
+  const ctx = useContext(SocketContext);
+  if (!ctx) throw new Error("useSocket must be used within a SocketProvider");
+  return ctx;
+}
 
-export const useSocket = () => {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error("useSocket must be used within SocketProvider");
-  }
-  return context;
-};
-
-export const SocketProvider = ({ children }) => {
-  const socketRef = useRef(null); // 🔑 persistent socket
+// This app's auth is localStorage-based with no login event to hook into,
+// so we re-check localStorage on route changes (cheap) and only reconnect
+// the socket if the logged-in user actually changed.
+export function SocketProvider({ children }) {
+  const location = useLocation();
+  const socketRef = useRef(null);
+  const registeredUserIdRef = useRef(null);
   const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(() => new Set());
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    if (socketRef.current) return; // ✅ prevent re-creation
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    const userId = storedUser?._id || null;
+    setCurrentUserId(userId);
 
-    // const socketInstance = io(
-    //   import.meta.env.VITE_SOCKET_URL || "http://localhost:5002",
-    //   {
-    //     transports: ["websocket", "polling"],
-    //     reconnection: true,
-    //     reconnectionAttempts: Infinity,
-    //   }
-    // );
-    const socketInstance = io(import.meta.env.VITE_API_URL, {
-  withCredentials: true,
-  transports: ["websocket"],
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-});
+    if (!userId) {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      registeredUserIdRef.current = null;
+      return;
+    }
 
+    if (socketRef.current && registeredUserIdRef.current === userId) return; // already connected as this user
 
-    socketRef.current = socketInstance;
+    socketRef.current?.disconnect();
 
-    socketInstance.on("connect", () => {
+    const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
       setConnected(true);
-      console.log("🔌 Socket connected:", socketInstance.id);
+      socket.emit("register_user", { userId, role: storedUser.role });
+      registeredUserIdRef.current = userId;
     });
+    socket.on("disconnect", () => setConnected(false));
+    socket.on("connect_error", () => setConnected(false));
 
-    socketInstance.on("disconnect", () => {
-      setConnected(false);
-      console.log("❌ Socket disconnected");
-    });
+    socket.on("user_online", ({ userId: uid }) => setOnlineUsers((prev) => new Set(prev).add(uid)));
+    socket.on("user_offline", ({ userId: uid }) =>
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(uid);
+        return next;
+      })
+    );
+  }, [location.pathname]);
 
-    socketInstance.on("receive_message", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+  useEffect(() => () => socketRef.current?.disconnect(), []);
 
-    socketInstance.on("message_sent", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    // 🚫 DO NOT disconnect on unmount
-    return () => {};
+  const sendMessage = useCallback((receiverId, content) => {
+    socketRef.current?.emit("send_message", { receiverId, content });
   }, []);
 
-  const registerUser = (userId, role) => {
-    socketRef.current?.emit("register", { userId, role });
-  };
+  const sendTyping = useCallback((receiverId, isTyping) => {
+    socketRef.current?.emit(isTyping ? "typing_start" : "typing_stop", { receiverId });
+  }, []);
 
-  const sendMessage = (data) => {
-    socketRef.current?.emit("send_message", data);
-  };
+  const markRead = useCallback((otherUserId) => {
+    socketRef.current?.emit("mark_read", { otherUserId });
+  }, []);
 
-  const markAsRead = (messageId, userId) => {
-    socketRef.current?.emit("mark_as_read", { messageId, userId });
-  };
+  const value = { socket: socketRef.current, connected, onlineUsers, currentUserId, sendMessage, sendTyping, markRead };
 
-  const emitTyping = (receiverId, isTyping) => {
-    socketRef.current?.emit("typing", { receiverId, isTyping });
-  };
-
-  return (
-    <SocketContext.Provider
-      value={{
-        socket: socketRef.current,
-        connected,
-        messages,
-        registerUser,
-        sendMessage,
-        markAsRead,
-        emitTyping,
-        setMessages,
-      }}
-    >
-      {children}
-    </SocketContext.Provider>
-  );
-};
-
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+}

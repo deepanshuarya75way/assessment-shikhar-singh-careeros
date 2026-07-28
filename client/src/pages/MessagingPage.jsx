@@ -1,101 +1,79 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { SocketProvider } from "../context/SocketContext";
-import MessageList from "./MessageList";
-import ChatInterface from "./ChatInterface";
-import { ArrowLeft } from "lucide-react";
+import { Grid, MessageSquare } from "react-feather";
+import MessageList from "../components/messaging/MessageList";
+import ChatInterface from "../components/messaging/ChatInterface";
+import { useSocket } from "../context/SocketContext";
 
-const MessagingPage = () => {
+export default function MessagingPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = location.state?.user || JSON.parse(localStorage.getItem("user"));
+  const { connected } = useSocket();
 
-  const preSelectedChat = location.state?.preSelectedChat;
-  const [selectedChat, setSelectedChat] = useState(preSelectedChat || null);
-  const [showChat, setShowChat] = useState(!!preSelectedChat);
+  const [user] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
+  const [selectedChat, setSelectedChat] = useState(location.state?.preSelectedChat || null);
+  const [refreshToken, setRefreshToken] = useState(0);
 
-  const handleSelectChat = (chat) => {
-    setSelectedChat(chat);
-    setShowChat(true);
-  };
+  useEffect(() => {
+    if (location.state?.preSelectedChat) window.history.replaceState({}, document.title);
+  }, [location.state]);
 
-  const handleBack = () => {
-    setShowChat(false);
-    setSelectedChat(null);
-  };
+  const handleConversationUpdate = useCallback(() => setRefreshToken((t) => t + 1), []);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-4">Please login to access messages.</p>
-          <button
-            onClick={() => navigate("/")}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
+  if (!user?._id) {
+    navigate("/");
+    return null;
   }
 
+  const dashboardPath = user.role === "counselor" ? "/counselor-dashboard" : "/student-dashboard";
+
   return (
-    <SocketProvider>
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">💬</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🎓</span>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-700 hidden sm:inline">
-                  {user?.email}
-                </span>
+              <h1 className="text-2xl font-bold text-gray-900">CareerOS</h1>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate(dashboardPath)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200"
+              >
+                <Grid className="w-4 h-4" />
+                Dashboard
+              </button>
+              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-sm shadow-blue-200">
+                <MessageSquare className="w-4 h-4" />
+                Messages
+              </button>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold">
+                {user.name?.charAt(0).toUpperCase() || "U"}
               </div>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden" style={{ height: "calc(100vh - 200px)" }}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
-              <div
-                className={`lg:col-span-1 border-r border-gray-200 ${
-                  showChat ? "hidden lg:block" : "block"
-                }`}
-              >
-                <MessageList user={user} onSelectChat={handleSelectChat} />
-              </div>
+      {!connected && (
+        <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-800 text-sm text-center py-2">
+          Reconnecting... you're currently offline
+        </div>
+      )}
 
-              <div
-                className={`lg:col-span-2 ${
-                  showChat ? "block" : "hidden lg:block"
-                }`}
-              >
-                <ChatInterface
-                  user={user}
-                  selectedChat={selectedChat}
-                  onBack={handleBack}
-                />
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    </SocketProvider>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6 min-h-0">
+        <MessageList
+          currentUserId={user._id}
+          currentUserRole={user.role}
+          selectedChat={selectedChat}
+          onSelectChat={setSelectedChat}
+          refreshToken={refreshToken}
+        />
+        <ChatInterface selectedChat={selectedChat} currentUserId={user._id} onConversationUpdate={handleConversationUpdate} />
+      </main>
+    </div>
   );
-};
-
-export default MessagingPage;
+}

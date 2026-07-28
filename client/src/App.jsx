@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { SocketProvider } from "./context/SocketContext";
+import MessagingPage from "./pages/MessagingPage";
 import Landing from "./pages/Landing";
 import StudentDashboard from "./pages/StudentDashboard";
 import CounsellorDashboard from "./pages/CounsellorDashboard";  
@@ -16,21 +17,21 @@ import PsychometricReport from "./pages/PsychometricReport"
 import PsychometricReportsList from "./pages/PsychometricReportsList"
 import CareerRecommendations from "./pages/CareerRecommendations"
 import ProfilePage from "./pages/ProfilePage";
-import MessagingPage from "./pages/MessagingPage";
 import SavedItems from "./pages/SavedItems";
 import CollegeDetails from "./pages/CollegeDetails"
+
 
 function App() {
   const [user, setUser] = useState(null); // shared user state
 
   return (
-     <SocketProvider>
     <BrowserRouter>
-    
+          <SocketProvider>
       <Routes>
         <Route path="/" element={<Landing setUser={setUser} />} />
         <Route path="/student-dashboard" element={<StudentDashboard user={user} />} />
         <Route path="/profile" element={<ProfilePage user={user} />} />
+         <Route path="/messages" element={<MessagingPage />} />
         <Route path="/explore-colleges" element={<ExploreColleges />} />
         <Route path="/counselor-dashboard" element={<CounsellorDashboard user={user} />} />
           <Route path="/career-roadmap" element={<CareerRoadmapPage user={user} />} />
@@ -44,13 +45,11 @@ function App() {
           <Route path="/psychometric-report" element={<PsychometricReport />} />
           <Route path="/psychometric-report/:reportId" element={<PsychometricReport />} />
         <Route path="/career-recommendations" element={<CareerRecommendations />} />
-         <Route path="/messages" element={<MessagingPage />} />
          <Route path ="/saved-items" element={<SavedItems/>}/>
          <Route path="/college/:collegeId" element={<CollegeDetails />} />
       </Routes>
-     
-    </BrowserRouter>
      </SocketProvider>
+    </BrowserRouter>
   );
 }
 

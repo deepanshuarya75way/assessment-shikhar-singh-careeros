@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import Navbar from "../components/Navbar"
 
 const PsychometricReportsList = () => {
   const navigate = useNavigate()
@@ -67,7 +68,8 @@ const PsychometricReportsList = () => {
     )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-12">
+      <Navbar user={user} />
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-12">

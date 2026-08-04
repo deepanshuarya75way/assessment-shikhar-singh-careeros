@@ -1,6 +1,7 @@
 "use client"
 
 import { useLocation, useNavigate } from "react-router-dom"
+import Navbar from "../components/Navbar"
 
 const CareerRecommendations = () => {
   const location = useLocation()
@@ -55,7 +56,8 @@ const CareerRecommendations = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-12">
+      <Navbar />
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="text-center mb-12 pb-8 border-b border-gray-200">

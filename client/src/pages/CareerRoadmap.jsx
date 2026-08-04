@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { generateCareerRoadmap } from '../services/generateRoadmap';
 import RoadmapFlow from '../components/RoadmapFlow';
+import Navbar from '../components/Navbar';
 
 const CareerRoadmap = () => {
   const location = useLocation();
@@ -81,6 +82,7 @@ const CareerRoadmap = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      <Navbar />
       <header className="bg-white shadow-sm border-b border-gray-200 z-50">
         <div className="px-6 py-4">
           <div className="flex justify-between items-center">

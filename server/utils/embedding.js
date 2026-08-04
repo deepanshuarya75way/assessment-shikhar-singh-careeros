@@ -1,35 +1,4 @@
-// import { pipeline } from "@xenova/transformers";
 
-// let extractor = null;
-
-// export async function loadEmbeddingModel() {
-
-//     if (!extractor) {
-
-//         console.log("Loading BGE model...");
-
-//         extractor = await pipeline(
-//             "feature-extraction",
-//             "Xenova/bge-small-en-v1.5"
-//         );
-
-//         console.log("BGE model loaded successfully.");
-//     }
-
-//     return extractor;
-// }
-
-// export async function generateEmbedding(text) {
-
-//     const extractor = await loadEmbeddingModel();
-
-//     const output = await extractor(text, {
-//         pooling: "mean",
-//         normalize: true
-//     });
-
-//     return Array.from(output.data);
-// }
 
 import { pipeline } from "@xenova/transformers";
 

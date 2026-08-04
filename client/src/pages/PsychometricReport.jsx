@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useLocation, useParams } from "react-router-dom"
 import RadarChart from "../components/RadarChart"
 import BarChart from "../components/BarChart"
+import Navbar from "../components/Navbar"
 
 const PsychometricReport = () => {
   const navigate = useNavigate()
@@ -83,7 +84,8 @@ const PsychometricReport = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-12">
+      <Navbar user={user} />
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="text-center mb-8 pb-6 border-b border-gray-200">

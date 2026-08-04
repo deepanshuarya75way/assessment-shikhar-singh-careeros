@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, required: true },
 
   verified: { type: Boolean, default: false },
+  avatar: { type: String },
+  profilePicture: { type: String },
 
   otp: { type: String },
   otpExpires: { type: Date }

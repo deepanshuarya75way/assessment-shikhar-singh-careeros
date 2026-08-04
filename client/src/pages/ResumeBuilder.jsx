@@ -10,6 +10,7 @@ import TemplateSelector from './resume/TemplateSelector';
 import ResumePreview from './resume/ResumePreview';
 import AIOptimizationModal from './AIOptimizationModal';
 import { exportResumeAsDocx, exportResumeAsPdf } from './resume/ExportUtils';
+import Navbar from '../components/Navbar';
 
 const ResumeBuilder = () => {
   const navigate = useNavigate();
@@ -143,6 +144,7 @@ const ResumeBuilder = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navbar />
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

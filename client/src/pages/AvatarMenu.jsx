@@ -49,12 +49,20 @@ const AvatarMenu = ({ isOpen, onClose, onNavigateToProfile, onLogout, user }) =>
           {/* User Info */}
           <div className="mb-8 pb-8 border-b border-gray-200">
             <div className="flex items-center space-x-4 mb-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                {user?.email?.charAt(0).toUpperCase() || "U"}
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 overflow-hidden border-2 border-gray-100 shadow-sm">
+                {localStorage.getItem("userAvatar") || user?.avatar || user?.profilePicture ? (
+                  <img
+                    src={localStorage.getItem("userAvatar") || user?.avatar || user?.profilePicture}
+                    alt="Profile Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{user?.email?.charAt(0).toUpperCase() || "U"}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{user?.email}</p>
-                <p className="text-xs text-gray-500">Student</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || user?.email}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role || "Student"}</p>
               </div>
             </div>
           </div>
@@ -77,32 +85,9 @@ const AvatarMenu = ({ isOpen, onClose, onNavigateToProfile, onLogout, user }) =>
             </button>
 
             <button
-  onClick={() => {
-    onClose()
-    navigate("/saved-items")
-  }}
-  className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors flex items-center space-x-3"
->
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z"
-    />
-  </svg>
-  <span>Saved Items</span>
-</button>
-
-            <button
               onClick={() => {
                 onClose()
-                window.location.href = "/psychometric-reports-list"
+                navigate("/my-sessions")
               }}
               className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors flex items-center space-x-3"
             >
@@ -111,11 +96,57 @@ const AvatarMenu = ({ isOpen, onClose, onNavigateToProfile, onLogout, user }) =>
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 17v-6h6v6m2 4H7a2 2 0 01-2-2V5a2 2 0 012-2h5l2 2h5a2 2 0 012 2v14a2 2 0 01-2 2z"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <span>View Psychometric Reports</span>
+              <span>My Sessions</span>
             </button>
+
+            {user?.role !== "counselor" && user?.role !== "counsellor" && (
+              <>
+                <button
+                  onClick={() => {
+                    onClose()
+                    navigate("/saved-items")
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors flex items-center space-x-3"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z"
+                    />
+                  </svg>
+                  <span>Saved Items</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    onClose()
+                    navigate("/psychometric-reports-list")
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors flex items-center space-x-3"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 17v-6h6v6m2 4H7a2 2 0 01-2-2V5a2 2 0 012-2h5l2 2h5a2 2 0 012 2v14a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <span>View Psychometric Reports</span>
+                </button>
+              </>
+            )}
+
             <button className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors flex items-center space-x-3">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

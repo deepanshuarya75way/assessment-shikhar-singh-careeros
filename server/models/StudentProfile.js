@@ -23,6 +23,8 @@ const studentProfileSchema = new mongoose.Schema({
   careerGoals: { type: String },
   hobbies: [{ type: String }],
   profileCompleted: { type: Boolean, default: false },
+  avatar: { type: String },
+  profilePicture: { type: String },
   embedding: { type: [Number] } 
 }, { timestamps: true });
 

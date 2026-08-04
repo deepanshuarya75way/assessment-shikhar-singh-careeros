@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import AvatarMenu from "./AvatarMenu"
+import Navbar from "../components/Navbar"
 
 const SavedItems = ({ onLogout }) => {
   const navigate = useNavigate()
@@ -11,7 +11,19 @@ const SavedItems = ({ onLogout }) => {
   const [savedCourses, setSavedCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
-  const [avatarImage] = useState(() => localStorage.getItem("userAvatar") || null)
+  const [avatarImage, setAvatarImage] = useState(() => localStorage.getItem("userAvatar") || null)
+
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      setAvatarImage(localStorage.getItem("userAvatar"))
+    }
+    window.addEventListener("userAvatarUpdated", handleAvatarUpdate)
+    window.addEventListener("storage", handleAvatarUpdate)
+    return () => {
+      window.removeEventListener("userAvatarUpdated", handleAvatarUpdate)
+      window.removeEventListener("storage", handleAvatarUpdate)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user?._id) {
@@ -45,43 +57,7 @@ const SavedItems = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate("/dashboard")}>
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">🎓</span>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">Career Advisor</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button onClick={() => navigate("/dashboard")} className="text-gray-600 hover:text-blue-600 font-medium">
-                Dashboard
-              </button>
-              <div className="relative">
-                <button
-                  onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-                  className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold cursor-pointer overflow-hidden"
-                >
-                  {avatarImage ? (
-                    <img src={avatarImage || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{user?.email?.charAt(0).toUpperCase()}</span>
-                  )}
-                </button>
-                <AvatarMenu
-                  isOpen={showAvatarMenu}
-                  onClose={() => setShowAvatarMenu(false)}
-                  onNavigateToProfile={() => navigate("/profile")}
-                  onLogout={handleLogout}
-                  user={user}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar user={user} onLogout={onLogout} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

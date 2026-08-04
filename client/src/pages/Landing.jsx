@@ -3,13 +3,11 @@
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { useState, useCallback } from "react" // Added useCallback
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { GraduationCap, Users, UserCheck, BookOpen, Target, TrendingUp } from "lucide-react"
-import { AssistantOverlay } from "@/components/assistant"
+import Navbar from "../components/Navbar"
 import ProfileCompletionPopup from "./ProfileCompletionPopup"
 import CounsellorProfilePopup from "./CounsellorProfilePopup"
 
@@ -29,21 +27,6 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
   const [showCounsellorPopup, setShowCounsellorPopup] = useState(false)
-
-  const handleVoiceAction = useCallback(({ intent, result }) => {
-    console.log("[v0] Voice Action in Landing:", intent, result)
-
-    if (intent?.intent === "SIGNUP_START" || intent?.workflow === "SIGNUP") {
-      setIsSignUp(true)
-    } else if (intent?.intent === "LOGIN_START" || intent?.workflow === "SIGNIN") {
-      setIsSignUp(false)
-    }
-
-    if (intent?.role) {
-      console.log("[v0] Setting role from voice intent:", intent.role)
-      setSelectedRole(intent.role.toLowerCase())
-    }
-  }, [])
 
   const handleRoleSelection = async (role) => {
     if (!name || !email || !password || !role) {
@@ -141,88 +124,72 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background" data-voice-page="landing" data-context="landing">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">CareerOS</h1>
-          </div>
-
-          <Button
-            variant="outline"
-            data-action="toggle-auth-mode"
-            data-voice-action="toggle-auth-mode"
-            onClick={() => setIsSignUp(!isSignUp)}
-          >
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f8fafc] text-gray-900 font-sans pb-16" data-context="landing">
+      <Navbar onAuthToggle={() => setIsSignUp(!isSignUp)} isSignUp={isSignUp} />
 
       <main className="container mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h2 className="text-4xl lg:text-5xl font-bold text-balance">
-              Your Path to a <span className="text-primary">Successful Career</span>
+          <div className="space-y-6 bg-gradient-to-b from-blue-50/80 via-sky-50/30 to-transparent rounded-3xl p-8 sm:p-10 border border-blue-100/50 shadow-sm">
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight text-balance">
+              Your Path to a <span className="text-blue-600">Successful Career</span>
             </h2>
-            <p className="text-lg text-muted-foreground text-pretty leading-relaxed">
+            <p className="text-lg text-gray-600 font-medium leading-relaxed">
               Connect students, parents, and counselors on one comprehensive platform. Get personalized career guidance,
               track progress, and make informed decisions about your future.
             </p>
 
             {/* Features */}
-            <div className="grid gap-4 mt-8">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Target className="h-5 w-5 text-primary" />
+            <div className="grid gap-5 mt-8">
+              <div className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shrink-0">
+                  <Target className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Personalized Career Paths</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-bold text-gray-900">Personalized Career Paths</h3>
+                  <p className="text-sm text-gray-500 font-medium mt-0.5">
                     Tailored recommendations based on your interests and goals
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shrink-0">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Progress Tracking</h3>
-                  <p className="text-sm text-muted-foreground">Monitor your journey and celebrate milestones</p>
+                  <h3 className="font-bold text-gray-900">Progress Tracking</h3>
+                  <p className="text-sm text-gray-500 font-medium mt-0.5">Monitor your journey and celebrate milestones</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shrink-0">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Expert Guidance</h3>
-                  <p className="text-sm text-muted-foreground">Connect with professional counselors and mentors</p>
+                  <h3 className="font-bold text-gray-900">Expert Guidance</h3>
+                  <p className="text-sm text-gray-500 font-medium mt-0.5">Connect with professional counselors and mentors</p>
                 </div>
               </div>
             </div>
           </div>
 
           {!showOTP && (
-            <Card className="w-full max-w-md mx-auto" data-form-state={isSignUp ? "signup" : "signin"}>
-              <CardHeader className="text-center">
-                <CardTitle>{isSignUp ? "Create Your Account" : "Welcome Back"}</CardTitle>
-                <CardDescription>
+            <div className="w-full max-w-md mx-auto bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm" data-form-state={isSignUp ? "signup" : "signin"}>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{isSignUp ? "Create Your Account" : "Welcome Back"}</h3>
+                <p className="text-sm text-gray-500 font-medium">
                   {isSignUp ? "Join thousands of students on their career journey" : "Sign in to continue your journey"}
-                </CardDescription>
-              </CardHeader>
+                </p>
+              </div>
 
-              <CardContent className="space-y-4">
+              <div className="space-y-4">
                 {isSignUp && (
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" className="text-gray-700 font-semibold">Name</Label>
                     <Input
                       id="name"
                       data-action="name"
                       type="text"
+                      className="border-gray-200 focus-visible:ring-blue-600 rounded-xl"
                       placeholder="Your full name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -232,11 +199,12 @@ export default function LandingPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-gray-700 font-semibold">Email</Label>
                   <Input
                     id="email"
                     data-action="email"
                     type="email"
+                    className="border-gray-200 focus-visible:ring-blue-600 rounded-xl"
                     placeholder="you@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -245,11 +213,12 @@ export default function LandingPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-gray-700 font-semibold">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     data-action="password"
+                    className="border-gray-200 focus-visible:ring-blue-600 rounded-xl"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -259,7 +228,7 @@ export default function LandingPage() {
 
                 {isSignUp && (
                   <div className="space-y-2">
-                    <Label htmlFor="role">I am a...</Label>
+                    <Label htmlFor="role" className="text-gray-700 font-semibold">I am a...</Label>
                     <Select
                       value={selectedRole}
                       onValueChange={(v) => {
@@ -267,7 +236,7 @@ export default function LandingPage() {
                         setSelectedRole(v)
                       }}
                     >
-                      <SelectTrigger id="role" data-action="role" aria-label="Select your role">
+                      <SelectTrigger id="role" data-action="role" aria-label="Select your role" className="border-gray-200 focus:ring-blue-600 rounded-xl">
                         <SelectValue placeholder="Select your role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -285,68 +254,72 @@ export default function LandingPage() {
                   </div>
                 )}
 
-                <Button
-                  className="w-full"
+                <button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-sm shadow-blue-200 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-action="submit-auth"
-                  data-voice-action="submit-auth" // Added consistent voice action
                   onClick={() => (isSignUp ? handleRoleSelection(selectedRole) : handleSignIn())}
                   disabled={(isSignUp && !selectedRole) || isLoading}
                   aria-label={isSignUp ? "Create your account" : "Sign in to your account"}
                 >
                   {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
-                </Button>
+                </button>
 
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-gray-500 mt-6">
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     data-action="toggle-signup-link"
-                    data-voice-action="toggle-auth-mode" // Added voice action
                     onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-primary hover:underline font-medium"
+                    className="text-blue-600 hover:text-blue-700 hover:underline font-bold transition-colors"
                   >
                     {isSignUp ? "Sign in" : "Sign up"}
                   </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {showOTP && (
-            <Card className="w-full max-w-md mx-auto">
-              <CardHeader className="text-center">
-                <CardTitle>Verify Your Email</CardTitle>
-                <CardDescription>Enter the 6-digit OTP sent to {tempEmail}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="w-full max-w-md mx-auto bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Verify Your Email</h3>
+                <p className="text-sm text-gray-500 font-medium">Enter the 6-digit OTP sent to {tempEmail}</p>
+              </div>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="otp">OTP</Label>
+                  <Label htmlFor="otp" className="text-gray-700 font-semibold">OTP</Label>
                   <Input
                     id="otp"
                     data-action="otp"
                     type="text"
+                    className="border-gray-200 focus-visible:ring-blue-600 rounded-xl"
                     placeholder="Enter 6-digit OTP"
                     value={otp}
                     onChange={(e) => setOTP(e.target.value)}
                     aria-label="Enter the OTP sent to your email"
                   />
                 </div>
-                <Button className="w-full" data-action="submit-otp" onClick={handleVerifyOTP} disabled={verifying}>
+                <button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-sm shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                  data-action="submit-otp" 
+                  onClick={handleVerifyOTP} 
+                  disabled={verifying}
+                >
                   {verifying ? "Verifying..." : "Verify OTP"}
-                </Button>
-              </CardContent>
-            </Card>
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
         <section className="mt-20">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold mb-4">Choose Your Path</h3>
-            <p className="text-muted-foreground text-lg">Different roles, tailored experiences</p>
+            <h3 className="text-3xl font-extrabold text-gray-900 mb-2">Choose Your Path</h3>
+            <p className="text-gray-500 font-medium">Different roles, tailored experiences</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <Card
-              className="hover:shadow-lg transition-shadow cursor-pointer group"
+            <div
+              className="bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer group"
               data-action="select-student-role"
               onClick={() => {
                 setSelectedRole("student")
@@ -356,25 +329,23 @@ export default function LandingPage() {
               tabIndex={0}
               role="button"
             >
-              <CardHeader className="text-center">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  <GraduationCap className="h-8 w-8 text-primary" />
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-5 border border-blue-100/50 group-hover:scale-110 transition-transform">
+                  <GraduationCap className="h-8 w-8" />
                 </div>
-                <CardTitle>Students</CardTitle>
-                <CardDescription>Discover your potential and plan your future</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Personalized career assessments</li>
-                  <li>• Goal setting and tracking</li>
-                  <li>• Course recommendations</li>
-                  <li>• Progress monitoring</li>
-                </ul>
-              </CardContent>
-            </Card>
+                <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Students</h4>
+                <p className="text-sm text-gray-500 font-medium">Discover your potential and plan your future</p>
+              </div>
+              <ul className="space-y-3 text-sm text-gray-600 font-medium mt-auto border-t border-gray-100 pt-6">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Personalized career assessments</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Goal setting and tracking</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Course recommendations</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Progress monitoring</li>
+              </ul>
+            </div>
 
-            <Card
-              className="hover:shadow-lg transition-shadow cursor-pointer group"
+            <div
+              className="bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer group"
               data-action="select-parent-role"
               onClick={() => {
                 setSelectedRole("parent")
@@ -384,25 +355,23 @@ export default function LandingPage() {
               tabIndex={0}
               role="button"
             >
-              <CardHeader className="text-center">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  <Users className="h-8 w-8 text-primary" />
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-5 border border-blue-100/50 group-hover:scale-110 transition-transform">
+                  <Users className="h-8 w-8" />
                 </div>
-                <CardTitle>Parents</CardTitle>
-                <CardDescription>Support your child's career journey</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Track your child's progress</li>
-                  <li>• Access guidance resources</li>
-                  <li>• Connect with counselors</li>
-                  <li>• Stay informed on opportunities</li>
-                </ul>
-              </CardContent>
-            </Card>
+                <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Parents</h4>
+                <p className="text-sm text-gray-500 font-medium">Support your child's career journey</p>
+              </div>
+              <ul className="space-y-3 text-sm text-gray-600 font-medium mt-auto border-t border-gray-100 pt-6">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Track your child's progress</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Access guidance resources</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Connect with counselors</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Stay informed on opportunities</li>
+              </ul>
+            </div>
 
-            <Card
-              className="hover:shadow-lg transition-shadow cursor-pointer group"
+            <div
+              className="bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer group"
               data-action="select-counselor-role"
               onClick={() => {
                 setSelectedRole("counselor")
@@ -412,35 +381,35 @@ export default function LandingPage() {
               tabIndex={0}
               role="button"
             >
-              <CardHeader className="text-center">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  <UserCheck className="h-8 w-8 text-primary" />
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-5 border border-blue-100/50 group-hover:scale-110 transition-transform">
+                  <UserCheck className="h-8 w-8" />
                 </div>
-                <CardTitle>Counselors</CardTitle>
-                <CardDescription>Guide students to success</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Manage student portfolios</li>
-                  <li>• Track student progress</li>
-                  <li>• Schedule appointments</li>
-                  <li>• Generate insights and reports</li>
-                </ul>
-              </CardContent>
-            </Card>
+                <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Counselors</h4>
+                <p className="text-sm text-gray-500 font-medium">Guide students to success</p>
+              </div>
+              <ul className="space-y-3 text-sm text-gray-600 font-medium mt-auto border-t border-gray-100 pt-6">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Manage student portfolios</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Track student progress</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Schedule appointments</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div> Generate insights and reports</li>
+              </ul>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border bg-card/50 mt-20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+      <footer className="mt-20 py-8 border-t border-gray-200 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-primary">Career Advisor</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm shadow-blue-200 shrink-0">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+              <span className="font-bold text-gray-900">CareerOS</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2025 Career Advisor. Empowering futures, one student at a time.
+            <p className="text-sm text-gray-500 font-medium">
+              © 2025 CareerOS. Empowering futures, one student at a time.
             </p>
           </div>
         </div>
@@ -468,8 +437,7 @@ export default function LandingPage() {
         />
       )}
 
-      {/* Voice Assistant Overlay */}
-      <AssistantOverlay position="bottom-right" defaultExpanded={false} onAction={handleVoiceAction} />
+
     </div>
   )
 }

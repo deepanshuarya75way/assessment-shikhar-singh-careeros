@@ -4,9 +4,11 @@
 
 import express from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import User from "../models/user.js";
 import StudentProfile from "../models/StudentProfile.js";
 import CounsellorProfile from "../models/counsellor-profile.js";
+import Service from "../models/Service.js";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import SibApiV3Sdk from "sib-api-v3-sdk";
@@ -14,6 +16,10 @@ import { generateEmbedding } from "../utils/embedding.js";
 
 dotenv.config();
 const router = express.Router();
+
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "svbvm4kd";
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "649368999834735";
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "8ujOA-7k9_czlIQL0dxShtbOxPY";
 
 /* -------------------- BREVO API SETUP (NO SMTP) -------------------- */
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
@@ -196,6 +202,54 @@ router.post("/complete-counsellor-profile", async (req, res) => {
   }
 });
 
+/* ---------- UPLOAD AVATAR TO CLOUDINARY ---------- */
+router.post("/upload-avatar", async (req, res) => {
+  try {
+    const { image, userId } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const paramsToSign = `timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
+    const signature = crypto.createHash("sha1").update(paramsToSign).digest("hex");
+
+    const formData = new URLSearchParams();
+    formData.append("file", image);
+    formData.append("api_key", CLOUDINARY_API_KEY);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+
+    const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const cloudData = await cloudRes.json();
+
+    if (!cloudRes.ok || !cloudData.secure_url) {
+      console.error("Cloudinary Error:", cloudData);
+      return res.status(500).json({ error: cloudData.error?.message || "Cloudinary upload failed" });
+    }
+
+    const imageUrl = cloudData.secure_url;
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      await StudentProfile.findOneAndUpdate(
+        { userId: new mongoose.Types.ObjectId(userId) },
+        { $set: { avatar: imageUrl, profilePicture: imageUrl } },
+        { upsert: true, new: true }
+      );
+      await User.findByIdAndUpdate(userId, { avatar: imageUrl, profilePicture: imageUrl });
+    }
+
+    res.json({ url: imageUrl, message: "Avatar uploaded to Cloudinary successfully" });
+  } catch (error) {
+    console.error("Upload avatar server error:", error);
+    res.status(500).json({ error: "Failed to upload avatar" });
+  }
+});
+
 /* ---------- GET STUDENT PROFILE ---------- */
 router.get("/profile/:userId", async (req, res) => {
   try {
@@ -211,18 +265,51 @@ router.get("/profile/:userId", async (req, res) => {
   }
 });
 
+/* ---------- UPDATE STUDENT PROFILE ---------- */
+router.put("/profile/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, ...profileData } = req.body;
+
+    if (name && mongoose.Types.ObjectId.isValid(userId)) {
+      await User.findByIdAndUpdate(userId, { name });
+    }
+
+    const updatedProfile = await StudentProfile.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $set: profileData },
+      { new: true, upsert: true }
+    );
+
+    res.json(updatedProfile);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 /* ---------- GET COUNSELLOR PROFILE ---------- */
 router.get("/counsellor-profile/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const profile = await CounsellorProfile.findOne({
       userId: new mongoose.Types.ObjectId(userId),
-    });
+    })
+      .populate("userId", "name email avatar profilePicture")
+      .lean();
+
     if (!profile)
       return res
         .status(404)
         .json({ message: "Counsellor profile not found" });
-    res.json(profile);
+
+    const user = profile.userId;
+    res.json({
+      ...profile,
+      userId: user?._id || profile.userId,
+      fullName: user?.name || "Counsellor",
+      avatar: user?.avatar || user?.profilePicture || "",
+    });
   } catch (error) {
     console.error("Error fetching counsellor profile:", error);
     res.status(500).json({ error: "Failed to fetch counsellor profile" });
@@ -232,7 +319,48 @@ router.get("/counsellor-profile/:userId", async (req, res) => {
 /* ---------- GET ALL COUNSELLORS ---------- */
 router.get("/counsellors/all", async (req, res) => {
   try {
-    const counsellors = await CounsellorProfile.find({});
+    const profiles = await CounsellorProfile.find({ profileCompleted: true })
+      .populate("userId", "name email avatar profilePicture")
+      .lean();
+
+    const counsellorUserIds = profiles
+      .map((profile) => profile.userId?._id)
+      .filter(Boolean);
+
+    const services = counsellorUserIds.length
+      ? await Service.find({
+          counsellorId: { $in: counsellorUserIds },
+          status: true,
+        })
+          .sort({ price: 1 })
+          .lean()
+      : [];
+
+    const servicesByCounsellor = services.reduce((acc, service) => {
+      const key = String(service.counsellorId);
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(service);
+      return acc;
+    }, {});
+
+    const counsellors = profiles.map((profile) => {
+      const user = profile.userId;
+      const userId = user?._id || profile.userId;
+      const counsellorServices = servicesByCounsellor[String(userId)] || [];
+      const primaryService = counsellorServices[0] || null;
+
+      return {
+        ...profile,
+        userId,
+        fullName: user?.name || "Counsellor",
+        email: user?.email || "",
+        avatar: user?.avatar || user?.profilePicture || "",
+        services: counsellorServices,
+        consultationFee: primaryService?.price ?? null,
+        sessionDuration: primaryService?.duration ?? null,
+      };
+    });
+
     res.json(counsellors);
   } catch (error) {
     console.error("Error fetching counsellors:", error);

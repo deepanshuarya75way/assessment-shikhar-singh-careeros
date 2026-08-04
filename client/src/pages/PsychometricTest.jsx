@@ -9,6 +9,7 @@ import AptitudeSection from "../components/AptitudeSection"
 import RIASECSection from "../components/RIASECSection"
 import ValuesSection from "../components/ValuesSection"
 import SubmitModal from "../components/SubmitModal"
+import Navbar from "../components/Navbar"
 
 const PsychometricTest = () => {
   const navigate = useNavigate()
@@ -86,7 +87,8 @@ const PsychometricTest = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-12">
+      <Navbar user={user} />
       <StepLayout currentStep={currentStep} totalSteps={4}>
         <ProgressBar currentStep={currentStep} totalSteps={4} />
 

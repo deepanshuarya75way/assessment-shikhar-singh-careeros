@@ -5,30 +5,24 @@ import { useState } from "react"
 const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
-    fullName: "",
+    professionalTitle: "",
     specialization: "",
+    expertise: [],
     experience: "",
     qualifications: [],
-    expertise: [],
+    languages: [],
     location: "",
     phoneNumber: "",
     bio: "",
-    consultationFee: "",
-    availability: {
-      days: [],
-      timeSlots: [],
-    },
-    languages: [],
   })
 
   const steps = [
-    { title: "Personal Information", subtitle: "Tell us about yourself" },
-    { title: "Professional Details", subtitle: "Your qualifications and experience" },
-    { title: "Expertise & Services", subtitle: "What you specialize in" },
-    { title: "Availability & Contact", subtitle: "How students can reach you" },
+    { title: "Professional Basics", subtitle: "Core profile details" },
+    { title: "Experience & Qualifications", subtitle: "Your background and credentials" },
+    { title: "Expertise & Languages", subtitle: "Your counseling focus and communication" },
   ]
 
-  const specializationOptions = [
+  const expertiseOptions = [
     "Career Counseling",
     "Academic Guidance",
     "College Admissions",
@@ -36,30 +30,7 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
     "Mental Health",
     "Life Coaching",
   ]
-  const qualificationOptions = ["PhD", "Masters", "Bachelors", "Diploma", "Certification", "Professional License"]
-  const expertiseOptions = [
-    "STEM Careers",
-    "Arts & Humanities",
-    "Business & Finance",
-    "Healthcare",
-    "Technology",
-    "Education",
-    "Social Work",
-    "Engineering",
-    "Law",
-    "Creative Fields",
-  ]
-  const dayOptions = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  const timeSlotOptions = [
-    "9:00-10:00",
-    "10:00-11:00",
-    "11:00-12:00",
-    "12:00-13:00",
-    "14:00-15:00",
-    "15:00-16:00",
-    "16:00-17:00",
-    "17:00-18:00",
-  ]
+
   const languageOptions = [
     "English",
     "Hindi",
@@ -74,40 +45,39 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
   ]
 
   const handleInputChange = (field, value) => {
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".")
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value,
-        },
-      }))
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }))
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleMultiSelect = (field, option) => {
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".")
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: prev[parent][child].includes(option)
-            ? prev[parent][child].filter((item) => item !== option)
-            : [...prev[parent][child], option],
-        },
-      }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: prev[field].includes(option)
-          ? prev[field].filter((item) => item !== option)
-          : [...prev[field], option],
-      }))
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].includes(option)
+        ? prev[field].filter((item) => item !== option)
+        : [...prev[field], option],
+    }))
+  }
+
+  const handleQualificationChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      qualifications: prev.qualifications.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      ),
+    }))
+  }
+
+  const addQualification = () => {
+    setFormData((prev) => ({
+      ...prev,
+      qualifications: [...prev.qualifications, { degree: "", institution: "", year: "" }],
+    }))
+  }
+
+  const removeQualification = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      qualifications: prev.qualifications.filter((_, itemIndex) => itemIndex !== index),
+    }))
   }
 
   const handleNext = () => {
@@ -122,69 +92,87 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
     }
   }
 
- const handleSubmit = async () => {
-  try {
-    const payload = {
-      userId: user._id,
-      ...formData,
-      experience: Number(formData.experience),
-      consultationFee: Number(formData.consultationFee),
-      profileCompleted: true,
-    };
-
-    console.log("Counsellor payload:", payload);
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/users/complete-counsellor-profile`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        userId: user._id,
+        professionalTitle: formData.professionalTitle,
+        specialization: formData.specialization,
+        expertise: formData.expertise,
+        experience: Number(formData.experience),
+        qualifications: formData.qualifications.map((item) => ({
+          degree: item.degree,
+          institution: item.institution,
+          year: item.year ? Number(item.year) : undefined,
+        })),
+        languages: formData.languages,
+        location: formData.location,
+        phoneNumber: formData.phoneNumber,
+        bio: formData.bio,
+        verified: false,
+        profileCompleted: true,
       }
-    );
 
-    if (response.ok) {
-      const profileData = await response.json();
-      onComplete(profileData);
-    } else {
-      const err = await response.json();
-      console.error("Failed to save counsellor profile:", err);
-      alert("Failed to save profile. Check console for details.");
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/complete-counsellor-profile`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      )
+
+      if (response.ok) {
+        const profileData = await response.json()
+        onComplete(profileData)
+      } else {
+        const err = await response.json()
+        console.error("Failed to save counsellor profile:", err)
+        alert("Failed to save profile. Check console for details.")
+      }
+    } catch (error) {
+      console.error("Error saving counsellor profile:", error)
+      alert("Error saving profile. Please try again.")
     }
-  } catch (error) {
-    console.error("Error saving counsellor profile:", error);
-    alert("Error saving profile. Please try again.");
   }
-};
-
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0: // Personal Information
+      case 0:
         return (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Full Name *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Professional Title</label>
               <input
                 type="text"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
+                value={formData.professionalTitle}
+                onChange={(e) => handleInputChange("professionalTitle", e.target.value)}
                 className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Enter your full name"
+                placeholder="e.g. Career Counsellor"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Location *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Primary Specialization *</label>
+              <input
+                type="text"
+                value={formData.specialization}
+                onChange={(e) => handleInputChange("specialization", e.target.value)}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter your specialization"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Location</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
                 className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="City, State (e.g., Mumbai, Maharashtra)"
+                placeholder="City, State"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Phone Number *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Phone Number</label>
               <input
                 type="tel"
                 value={formData.phoneNumber}
@@ -193,31 +181,22 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
                 placeholder="+91 9876543210"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Bio</label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => handleInputChange("bio", e.target.value)}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Tell students about your background and approach..."
+                rows="4"
+              />
+            </div>
           </div>
         )
 
-      case 1: // Professional Details
+      case 1:
         return (
           <div className="space-y-8">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Primary Specialization *</label>
-              <div className="grid grid-cols-2 gap-3">
-                {specializationOptions.map((spec) => (
-                  <button
-                    key={spec}
-                    type="button"
-                    onClick={() => handleInputChange("specialization", spec)}
-                    className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.specialization === spec
-                        ? "bg-blue-500 text-white border-blue-500 shadow-lg"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-                    }`}
-                  >
-                    {spec}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">Years of Experience *</label>
               <input
@@ -230,136 +209,103 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
                 max="50"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">Qualifications (Select multiple)</label>
-              <div className="grid grid-cols-2 gap-3">
-                {qualificationOptions.map((qual) => (
-                  <button
-                    key={qual}
-                    type="button"
-                    onClick={() => handleMultiSelect("qualifications", qual)}
-                    className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.qualifications.includes(qual)
-                        ? "bg-green-500 text-white border-green-500 shadow-lg"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-green-300 hover:bg-green-50"
-                    }`}
-                  >
-                    {qual}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-gray-700">Qualifications</label>
+                <button
+                  type="button"
+                  onClick={addQualification}
+                  className="px-3 py-2 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
+                >
+                  Add Qualification
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {formData.qualifications.length === 0 ? (
+                  <p className="text-sm text-gray-500">No qualifications added yet.</p>
+                ) : (
+                  formData.qualifications.map((qualification, index) => (
+                    <div key={index} className="border border-gray-200 rounded-xl p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-700">Qualification {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeQualification(index)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={qualification.degree}
+                        onChange={(e) => handleQualificationChange(index, "degree", e.target.value)}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg"
+                        placeholder="Degree"
+                      />
+                      <input
+                        type="text"
+                        value={qualification.institution}
+                        onChange={(e) => handleQualificationChange(index, "institution", e.target.value)}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg"
+                        placeholder="Institution"
+                      />
+                      <input
+                        type="number"
+                        value={qualification.year}
+                        onChange={(e) => handleQualificationChange(index, "year", e.target.value)}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg"
+                        placeholder="Year"
+                      />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
         )
 
-      case 2: // Expertise & Services
+      case 2:
         return (
           <div className="space-y-8">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">
-                Areas of Expertise (Select multiple)
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-4">Areas of Expertise</label>
               <div className="grid grid-cols-2 gap-3">
-                {expertiseOptions.map((expertise) => (
+                {expertiseOptions.map((item) => (
                   <button
-                    key={expertise}
+                    key={item}
                     type="button"
-                    onClick={() => handleMultiSelect("expertise", expertise)}
+                    onClick={() => handleMultiSelect("expertise", item)}
                     className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.expertise.includes(expertise)
+                      formData.expertise.includes(item)
                         ? "bg-purple-500 text-white border-purple-500 shadow-lg"
                         : "bg-white text-gray-700 border-gray-200 hover:border-purple-300 hover:bg-purple-50"
                     }`}
                   >
-                    {expertise}
+                    {item}
                   </button>
                 ))}
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Professional Bio *</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => handleInputChange("bio", e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Tell students about your background, approach, and how you can help them..."
-                rows="4"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Consultation Fee (per session) *</label>
-              <input
-                type="number"
-                value={formData.consultationFee}
-                onChange={(e) => handleInputChange("consultationFee", e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Enter fee in rupees"
-                min="0"
-              />
-            </div>
-          </div>
-        )
 
-      case 3: // Availability & Contact
-        return (
-          <div className="space-y-8">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">Available Days (Select multiple)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-4">Languages Spoken</label>
               <div className="grid grid-cols-2 gap-3">
-                {dayOptions.map((day) => (
+                {languageOptions.map((item) => (
                   <button
-                    key={day}
+                    key={item}
                     type="button"
-                    onClick={() => handleMultiSelect("availability.days", day)}
+                    onClick={() => handleMultiSelect("languages", item)}
                     className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.availability.days.includes(day)
-                        ? "bg-orange-500 text-white border-orange-500 shadow-lg"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:bg-orange-50"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">
-                Available Time Slots (Select multiple)
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {timeSlotOptions.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => handleMultiSelect("availability.timeSlots", slot)}
-                    className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.availability.timeSlots.includes(slot)
-                        ? "bg-pink-500 text-white border-pink-500 shadow-lg"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-pink-300 hover:bg-pink-50"
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">
-                Languages Spoken (Select multiple)
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {languageOptions.map((language) => (
-                  <button
-                    key={language}
-                    type="button"
-                    onClick={() => handleMultiSelect("languages", language)}
-                    className={`p-3 text-sm rounded-xl border-2 transition-all ${
-                      formData.languages.includes(language)
+                      formData.languages.includes(item)
                         ? "bg-teal-500 text-white border-teal-500 shadow-lg"
                         : "bg-white text-gray-700 border-gray-200 hover:border-teal-300 hover:bg-teal-50"
                     }`}
                   >
-                    {language}
+                    {item}
                   </button>
                 ))}
               </div>
@@ -375,17 +321,11 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
-        return formData.fullName && formData.location && formData.phoneNumber
+        return formData.specialization.trim().length > 0
       case 1:
-        return formData.specialization && formData.experience && formData.qualifications.length > 0
+        return formData.experience !== "" && Number(formData.experience) >= 0
       case 2:
-        return formData.expertise.length > 0 && formData.bio && formData.consultationFee
-      case 3:
-        return (
-          formData.availability.days.length > 0 &&
-          formData.availability.timeSlots.length > 0 &&
-          formData.languages.length > 0
-        )
+        return formData.expertise.length > 0 && formData.languages.length > 0
       default:
         return false
     }
@@ -394,12 +334,11 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Counsellor Profile</h2>
-              <p className="text-gray-600">Help students find the right guidance they need</p>
+              <p className="text-gray-600">Share only the profile details students need to know.</p>
             </div>
             <button
               onClick={onClose}
@@ -409,7 +348,6 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
             </button>
           </div>
 
-          {/* Progress Bar */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
               {steps.map((step, index) => (
@@ -438,10 +376,8 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-8">{renderStepContent()}</div>
 
-        {/* Footer */}
         <div className="p-8 border-t border-gray-200 bg-gray-50 flex justify-between">
           <button
             onClick={handlePrevious}
@@ -454,7 +390,7 @@ const CounsellorProfilePopup = ({ user, onComplete, onClose }) => {
           {currentStep === steps.length - 1 ? (
             <button
               onClick={handleSubmit}
-              disabled={!isStepValid()}
+              disabled={!formData.specialization.trim() || !formData.experience || formData.expertise.length === 0 || formData.languages.length === 0}
               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Complete Profile

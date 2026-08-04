@@ -1,13 +1,22 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Grid, MessageSquare } from "react-feather"
+import {
+  Briefcase,
+  LayoutGrid,
+  MessageSquare,
+  ArrowRight,
+  GraduationCap,
+  GitFork,
+  Compass,
+  BookOpen,
+  FileText,
+  Camera,
+} from "lucide-react"
 import AvatarMenu from "./AvatarMenu"
 import ProfileCompletionPopup from "./ProfileCompletionPopup"
-import CollegeCard from "../components/CollegeCard"
-import RecommendationSkeleton from "../components/RecommendationSkeleton"
+import Navbar from "../components/Navbar"
 
 const StudentDashboard = ({ onLogout }) => {
   const navigate = useNavigate()
@@ -33,26 +42,22 @@ const StudentDashboard = ({ onLogout }) => {
   const [totalEligible, setTotalEligible] = useState(0)
   const [savedColleges, setSavedColleges] = useState([])
 
-  const [bookedSessions, setBookedSessions] = useState([])
-  const [loadingSessions, setLoadingSessions] = useState(false)
-  const [activeTab, setActiveTab] = useState("features")
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      const stored = localStorage.getItem("userAvatar")
+      if (stored) setAvatarImage(stored)
+    }
+    window.addEventListener("userAvatarUpdated", handleAvatarUpdate)
+    window.addEventListener("storage", handleAvatarUpdate)
+    return () => {
+      window.removeEventListener("userAvatarUpdated", handleAvatarUpdate)
+      window.removeEventListener("storage", handleAvatarUpdate)
+    }
+  }, [])
 
   useEffect(() => {
     if (user?._id && !profileCompleted) {
       checkProfileStatus()
-    }
-  }, [user?._id])
-
-  useEffect(() => {
-    if (user?._id && profileCompleted) {
-      fetchRecommendations()
-      fetchSavedColleges()
-    }
-  }, [user?._id, profileCompleted])
-
-  useEffect(() => {
-    if (user?._id) {
-      fetchBookedSessions()
     }
   }, [user?._id])
 
@@ -116,22 +121,6 @@ const StudentDashboard = ({ onLogout }) => {
     }
   }
 
-  const fetchBookedSessions = async () => {
-    setLoadingSessions(true)
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/appointments/student/${user._id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setBookedSessions(data)
-      }
-    } catch (error) {
-      console.error("Error fetching booked sessions:", error)
-      setBookedSessions([])
-    } finally {
-      setLoadingSessions(false)
-    }
-  }
-
   const handleProfileComplete = (profileData) => {
     setUserProfile(profileData)
     setProfileCompleted(true)
@@ -139,11 +128,6 @@ const StudentDashboard = ({ onLogout }) => {
     const updatedUser = { ...user, profileCompleted: true }
     localStorage.setItem("user", JSON.stringify(updatedUser))
     setUser(updatedUser)
-  }
-
-  const handleAvatarUpdate = (imageUrl) => {
-    setAvatarImage(imageUrl)
-    localStorage.setItem("userAvatar", imageUrl)
   }
 
   const handleLogout = () => {
@@ -183,51 +167,6 @@ const StudentDashboard = ({ onLogout }) => {
     console.log("Applied to college:", college.name)
   }
 
-  const features = [
-    {
-      title: "Explore Colleges",
-      description: "Discover colleges that match your interests and academic profile",
-      icon: "🏫",
-      gradient: "from-blue-500 to-blue-600",
-      hoverGradient: "from-blue-600 to-blue-700",
-    },
-    {
-      title: "Generate Career Roadmap",
-      description: "Get personalized career guidance based on your profile and goals",
-      icon: "🗺",
-      gradient: "from-green-500 to-green-600",
-      hoverGradient: "from-green-600 to-green-700",
-    },
-    {
-      title: "Still Confused?",
-      description: "Take our comprehensive assessment to find your perfect career path",
-      icon: "🤔",
-      gradient: "from-yellow-500 to-orange-500",
-      hoverGradient: "from-yellow-600 to-orange-600",
-    },
-    {
-      title: "Consult Counsellor",
-      description: "Get expert advice from professional career counsellors",
-      icon: "👨‍🏫",
-      gradient: "from-pink-500 to-pink-600",
-      hoverGradient: "from-pink-600 to-pink-700",
-    },
-    {
-      title: "ATS Resume Builder",
-      description: "Create professional, ATS-compliant resumes tailored to your career goals",
-      icon: "📄",
-      gradient: "from-red-500 to-red-600",
-      hoverGradient: "from-red-600 to-red-700",
-    },
-    {
-      title: "AR Campus Visualizer",
-      description: "Experience virtual campus tours and explore college facilities in AR",
-      icon: "🥽",
-      gradient: "from-cyan-500 to-cyan-600",
-      hoverGradient: "from-cyan-600 to-cyan-700",
-    },
-  ]
-
   const handleFeatureClick = (featureTitle) => {
     if (!profileCompleted) {
       alert("Please complete your profile first to access this feature!")
@@ -235,339 +174,232 @@ const StudentDashboard = ({ onLogout }) => {
       return
     }
     if (featureTitle === "Explore Colleges") navigate("/explore-colleges")
-    if (featureTitle === "Generate Career Roadmap") navigate("/career-roadmap-form")
+    if (featureTitle === "Generate Career Roadmap") navigate("/career-roadmap")
     if (featureTitle === "Consult Counsellor") navigate("/consult-counsellor", { state: { user } })
     if (featureTitle === "Still Confused?") navigate("/psychometric-test", { state: { user } })
     if (featureTitle === "ATS Resume Builder") navigate("/resume-builder")
     if (featureTitle === "AR Campus Visualizer") navigate("/ar-campus-visualizer")
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      confirmed: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      completed: "bg-blue-100 text-blue-800",
-      cancelled: "bg-red-100 text-red-800",
-    }
-    return badges[status] || badges.pending
+    if (featureTitle === "Career Insights") navigate("/psychometric-reports-list")
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">🎓</span>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">CareerOS</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-sm shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-              >
-                <Grid className="w-4 h-4" />
-                Dashboard
-              </button>
+    <div className="min-h-screen bg-[#f8fafc] text-gray-900 font-sans pb-16">
+      <Navbar user={user} onLogout={onLogout} />
 
-              <button
-                onClick={() => navigate("/messages")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Messages
-              </button>
+      {/* Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-              <div className="relative">
-                <button
-                  onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold hover:shadow-lg transition-shadow cursor-pointer overflow-hidden"
-                >
-                  {avatarImage ? (
-                    <img src={avatarImage || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{user?.email?.charAt(0).toUpperCase() || "U"}</span>
-                  )}
-                </button>
-
-                <AvatarMenu
-                  isOpen={showAvatarMenu}
-                  onClose={() => setShowAvatarMenu(false)}
-                  onNavigateToProfile={() => {
-                    setShowAvatarMenu(false)
-                    navigate("/profile")
-                  }}
-                  onLogout={handleLogout}
-                  user={user}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {profileCompleted ? (
-        <div className="bg-green-50 border-l-4 border-green-400 p-4 mx-4 mt-4 rounded-r-lg">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <span className="text-green-400 text-xl">✅</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-green-700 font-medium">
-                Profile completed! You're all set to explore your career options.
+        {/* Profile Warning Notification if incomplete */}
+        {!profileCompleted && (
+          <div className="bg-amber-50 border border-amber-200 p-4 mb-6 rounded-2xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-amber-500 text-xl">⚠️</span>
+              <p className="text-sm text-amber-800 font-medium">
+                Complete your student profile to unlock all AI recommendations and career planning tools.
               </p>
             </div>
+            <button
+              onClick={() => setShowProfilePopup(true)}
+              className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shrink-0 cursor-pointer shadow-sm"
+            >
+              Complete Now
+            </button>
           </div>
+        )}
+
+        {/* Hero Introductory Section strictly matching Image 3 */}
+        <div className="bg-gradient-to-b from-blue-50/80 via-sky-50/30 to-transparent rounded-3xl p-8 sm:p-12 mb-10 border border-blue-100/50 shadow-sm">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-3">
+            Your Career Journey Starts Here
+          </h2>
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl font-medium leading-relaxed">
+            Explore colleges, get career guidance, and plan your future with our comprehensive tools designed just for students like you.
+          </p>
         </div>
-      ) : (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-4 mt-4 rounded-r-lg">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <span className="text-yellow-400 text-xl">⚠</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700 font-medium">
-                Complete your profile to unlock all features and get personalized recommendations.
+
+        {/* Asymmetric Hero Cards Layout strictly matching Image 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+
+          {/* Card 1: Explore Colleges (Large Featured Gradient Card) */}
+          <div
+            onClick={() => handleFeatureClick("Explore Colleges")}
+            className="md:col-span-7 bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 text-white rounded-3xl p-8 sm:p-10 relative overflow-hidden flex flex-col justify-between shadow-lg shadow-blue-500/10 min-h-[320px] cursor-pointer group transition-all duration-300 hover:shadow-xl hover:scale-[1.005]"
+          >
+            <div>
+              <span className="bg-white/20 backdrop-blur-md text-white text-xs font-semibold px-4 py-1.5 rounded-full inline-block mb-5 border border-white/20">
+                Featured discovery
+              </span>
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+                Explore Colleges
+              </h3>
+              <p className="text-blue-100 text-sm max-w-md font-medium leading-relaxed">
+                Discover colleges that match your interests and academic profile
               </p>
-              <button
-                onClick={() => setShowProfilePopup(true)}
-                className="mt-2 text-yellow-800 underline hover:text-yellow-900"
-              >
-                Complete Profile Now
+            </div>
+
+            <div className="mt-8 flex items-center">
+              <button className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-6 py-2.5 rounded-full text-sm transition-all shadow-md flex items-center gap-2 cursor-pointer group-hover:px-7">
+                <span>Get Started</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
+
+            {/* Background Watermark Icon */}
+            <GraduationCap className="w-64 h-64 absolute -bottom-12 -right-12 text-white/10 pointer-events-none" />
+          </div>
+
+          {/* Card 2: Generate Career Roadmap */}
+          <div
+            onClick={() => handleFeatureClick("Generate Career Roadmap")}
+            className="md:col-span-5 bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[320px] cursor-pointer group"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6 border border-blue-100/50">
+                <GitFork className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                Generate Career Roadmap
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-6 font-medium">
+                Get personalized career guidance based on your profile and goals
+              </p>
+            </div>
+
+            <div className="flex items-center text-blue-600 hover:text-blue-700 font-bold text-sm gap-1.5 transition-all mt-auto">
+              <span>Get Started</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+
+          {/* Card 3: Still Confused? */}
+          <div
+            onClick={() => handleFeatureClick("Still Confused?")}
+            className="md:col-span-7 bg-blue-50/60 border border-blue-100 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[220px] cursor-pointer group"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
+                <Compass className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Still Confused?</h3>
+              <p className="text-gray-600 text-sm font-medium leading-relaxed max-w-md mb-6">
+                Take our comprehensive assessment to find your perfect career path
+              </p>
+            </div>
+
+            <button className="bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-bold px-5 py-2 rounded-xl text-sm transition-all w-fit shadow-sm cursor-pointer">
+              Get Started
+            </button>
+          </div>
+
+          {/* Card 4: Career Insights */}
+          <div
+            onClick={() => handleFeatureClick("Career Insights")}
+            className="md:col-span-5 bg-white rounded-3xl border border-gray-200/80 p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[220px] cursor-pointer group"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 border border-blue-100/50">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                Career Insights
+              </h3>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed mb-6">
+                Explore trends, salaries, and future-ready roles tailored to your interests
+              </p>
+            </div>
+
+            <div className="flex items-center text-blue-600 hover:text-blue-700 font-bold text-sm gap-1.5 transition-all mt-auto">
+              <span>View Insights</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+
+        </div>
+
+        {/* Core Career Tools Section strictly matching Image 2 */}
+        <div className="mb-16">
+          <div className="mb-6">
+            <h3 className="text-2xl font-extrabold text-gray-900 mb-1">Core career tools</h3>
+            <p className="text-sm text-gray-500 max-w-xl font-medium">
+              Three focused experiences to help students get guidance, build stronger resumes, and explore campuses in AR.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Consult Counsellor Card */}
+            <div
+              onClick={() => handleFeatureClick("Consult Counsellor")}
+              className="bg-white rounded-3xl border border-gray-200/80 p-7 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full cursor-pointer group min-h-[240px]"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 border border-blue-100/50">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  Consult Counsellor
+                </h4>
+                <p className="text-xs text-gray-500 leading-relaxed font-medium mb-6">
+                  Get expert advice from professional career counsellors
+                </p>
+              </div>
+
+              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-5 py-2.5 rounded-full transition-all w-fit shadow-sm shadow-blue-200 cursor-pointer">
+                Get Started
+              </button>
+            </div>
+
+            {/* ATS Resume Builder Card */}
+            <div
+              onClick={() => handleFeatureClick("ATS Resume Builder")}
+              className="bg-white rounded-3xl border border-gray-200/80 p-7 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full cursor-pointer group min-h-[240px] relative overflow-hidden"
+            >
+              {/* Corner Decorative Accent */}
+              <div className="w-24 h-24 bg-blue-50/70 rounded-2xl absolute -top-4 -right-4 -z-0 pointer-events-none" />
+
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 border border-blue-100/50">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  ATS Resume Builder
+                </h4>
+                <p className="text-xs text-gray-500 leading-relaxed font-medium mb-6">
+                  Create professional, ATS-compliant resumes tailored to your career goals
+                </p>
+              </div>
+
+              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-5 py-2.5 rounded-full transition-all w-fit shadow-sm shadow-blue-200 relative z-10 cursor-pointer">
+                Get Started
+              </button>
+            </div>
+
+            {/* AR Campus Visualizer Card */}
+            <div
+              onClick={() => handleFeatureClick("AR Campus Visualizer")}
+              className="bg-[#0a2540] text-white rounded-3xl p-7 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col justify-between h-full cursor-pointer group min-h-[240px] relative overflow-hidden"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center mb-5 border border-white/10">
+                  <Camera className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-white mb-2">
+                  AR Campus Visualizer
+                </h4>
+                <p className="text-xs text-blue-200/80 leading-relaxed font-medium mb-6">
+                  Experience virtual campus tours and explore college facilities in AR
+                </p>
+              </div>
+
+              <button className="bg-white text-gray-900 hover:bg-blue-50 font-semibold text-xs px-5 py-2.5 rounded-full transition-all w-fit shadow-sm cursor-pointer">
+                Get Started
+              </button>
+            </div>
+
           </div>
         </div>
-      )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("features")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === "features"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              🎯 Features
-            </button>
-            <button
-              onClick={() => setActiveTab("sessions")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                activeTab === "sessions"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              📅 My Sessions
-              {bookedSessions.length > 0 && (
-                <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {bookedSessions.length}
-                </span>
-              )}
-            </button>
-          </nav>
-        </div>
       </div>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === "features" && (
-          <>
-            <div className="mb-12 text-center">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Your Career Journey Starts Here</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Explore colleges, get career guidance, and plan your future with our comprehensive tools designed just
-                for students like you.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <div
-                  key={index}
-                  className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 ${
-                    !profileCompleted ? "opacity-75" : ""
-                  }`}
-                  onClick={() => handleFeatureClick(feature.title)}
-                >
-                  <div className="p-6">
-                    <div
-                      className={`w-16 h-16 bg-gradient-to-r ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto transform transition-transform duration-200 hover:scale-110`}
-                    >
-                      <span className="text-3xl">{feature.icon}</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">{feature.title}</h3>
-                    <p className="text-gray-600 text-sm text-center leading-relaxed">{feature.description}</p>
-                  </div>
-                  <div className="px-6 pb-6">
-                    <button
-                      className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                        profileCompleted
-                          ? `bg-gradient-to-r ${feature.gradient} hover:${feature.hoverGradient} text-white shadow-md hover:shadow-lg`
-                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {profileCompleted ? "Get Started" : "Complete Profile First"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {profileCompleted && (
-              <div className="mt-16">
-                <div className="mb-8">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                      <h3 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                        <span>🎯</span>
-                        AI-Powered Recommendations
-                      </h3>
-                      <p className="text-gray-600">
-                        Personalized college recommendations powered by our ML engine
-                        {totalEligible > 0 && (
-                          <span className="ml-2 text-sm text-blue-600 font-medium">
-                            ({totalEligible} colleges match your eligibility)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={fetchRecommendations}
-                      disabled={loadingRecommendations}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
-                    >
-                      <span className={loadingRecommendations ? "animate-spin" : ""}>🔄</span>
-                      Refresh
-                    </button>
-                  </div>
-
-                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-full border border-cyan-100">
-                    <span className="text-cyan-600">🧠</span>
-                    <span className="text-sm text-cyan-700 font-medium">
-                      Powered by 7-factor ML scoring with explainable AI
-                    </span>
-                  </div>
-                </div>
-
-                {recommendationError && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
-                    <div className="flex items-start gap-3">
-                      <span className="text-red-500 text-xl">⚠️</span>
-                      <div>
-                        <h4 className="font-semibold text-red-800">Error Loading Recommendations</h4>
-                        <p className="text-red-600 text-sm mt-1">{recommendationError}</p>
-                        <button
-                          onClick={fetchRecommendations}
-                          className="mt-3 text-sm text-red-700 underline hover:text-red-800"
-                        >
-                          Try again
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {loadingRecommendations ? (
-                  <RecommendationSkeleton />
-                ) : recommendations.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {recommendations.map((item, index) => (
-                      <CollegeCard
-                        key={item.college._id || index}
-                        college={item.college}
-                        score={item.score}
-                        rank={item.rank}
-                        reasons={item.reasons}
-                        features={item.features}
-                        userId={user._id}
-                        onSave={handleSaveCollege}
-                        onApply={handleApplyCollege}
-                        isSaved={savedColleges.includes(item.college._id)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  !recommendationError && (
-                    <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-                      <div className="text-5xl mb-4">🎓</div>
-                      <h4 className="text-xl font-bold text-gray-900 mb-2">No Recommendations Yet</h4>
-                      <p className="text-gray-600 mb-6">
-                        Complete your profile to get personalized college recommendations
-                      </p>
-                      <button
-                        onClick={() => setShowProfilePopup(true)}
-                        className="inline-block px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-                      >
-                        Update Profile
-                      </button>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {activeTab === "sessions" && (
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-gray-900">My Booked Sessions</h3>
-
-            {loadingSessions ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : bookedSessions.length > 0 ? (
-              <div className="grid gap-4">
-                {bookedSessions.map((session, index) => (
-                  <div key={index} className="bg-white rounded-xl shadow-md p-6 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-xl">👨‍🏫</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{session.counsellorName || "Counsellor"}</h4>
-                        <p className="text-sm text-gray-600">
-                          {formatDate(session.date)} at {session.time}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(session.status)}`}>
-                      {session.status || "pending"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-                <div className="text-5xl mb-4">📅</div>
-                <h4 className="text-xl font-bold text-gray-900 mb-2">No Sessions Booked</h4>
-                <p className="text-gray-600 mb-6">Book a session with a counsellor to get personalized guidance</p>
-                <button
-                  onClick={() => navigate("/consult-counsellor", { state: { user } })}
-                  className="inline-block px-6 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all duration-200"
-                >
-                  Book a Session
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
 
       {showProfilePopup && (
         <ProfileCompletionPopup

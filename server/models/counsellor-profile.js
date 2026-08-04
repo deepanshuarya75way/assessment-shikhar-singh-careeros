@@ -8,23 +8,70 @@ const counsellorProfileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    fullName: { type: String, required: true },
-    specialization: { type: String, required: true },
-    experience: { type: Number, required: true }, // years of experience
-    qualifications: [{ type: String }], // array of qualifications
-    expertise: [{ type: String }], // areas of expertise
-    location: { type: String, required: true },
-    phoneNumber: { type: String, required: true },
-    bio: { type: String, required: true },
-    consultationFee: { type: Number, required: true },
-    availability: {
-      days: [{ type: String }], // ['Monday', 'Tuesday', etc.]
-      timeSlots: [{ type: String }], // ['9:00-10:00', '10:00-11:00', etc.]
+
+    professionalTitle: {
+      type: String,
+      default: "",
     },
-    languages: [{ type: String }],
-    profileCompleted: { type: Boolean, default: true },
+
+    specialization: {
+      type: String,
+      required: true,
+    },
+
+    expertise: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    experience: {
+      type: Number,
+      default: 0,
+    },
+
+    qualifications: [
+      {
+        degree: String,
+        institution: String,
+        year: Number,
+      },
+    ],
+
+    languages: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    phoneNumber: {
+      type: String,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      default: "",
+    },
+
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 )
 
 export default mongoose.model("CounsellorProfile", counsellorProfileSchema)

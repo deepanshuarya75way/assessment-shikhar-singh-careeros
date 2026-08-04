@@ -9,13 +9,15 @@ import userRoutes from "./routes/users.js";
 import psychometricRoutes from "./routes/psychometric.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
 import generateRoadmapRoute from "./routes/generateRoadmap.js";
-import assistantSmart from "./routes/assistant-intent-smart.js";
-import paymentRoutes from "./routes/payments.js";
-import appointmentRoutes from "./routes/appointments.js";
 import resumeRoutes from "./routes/resume.routes.js";
 import collegeRoutes from "./routes/collegeRoutes.js";
 import collegeExplore from "./routes/collegeExplore.js";
 import messageRoutes from "./routes/messages.js";
+import bookingRoutes from "./routes/bookings.js";
+import serviceRoutes from "./routes/services.js";
+import availabilityRoutes from "./routes/availability.routes.js";
+import paymentRoutes from "./routes/payments.js";
+import { startBookingExpiryCleanupService } from "./services/bookingExpiryCleanup.service.js";
 import initSocket from "./socket/socket.js";
 
 dotenv.config();
@@ -65,6 +67,7 @@ app.use(
       "GET",
       "POST",
       "PUT",
+      "PATCH",
       "DELETE",
       "OPTIONS",
     ],
@@ -91,15 +94,12 @@ app.use("/api", recommendationRoutes);
 
 app.use("/api", generateRoadmapRoute);
 
-app.use("/api/payments", paymentRoutes);
 
-app.use("/api/appointments", appointmentRoutes);
-
-app.use(
-  "/api/assistant-intent-smart",
-  assistantSmart
-);
 app.use("/api/messages", messageRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/resume", resumeRoutes);
 
 app.use("/api/colleges", collegeRoutes);
@@ -115,6 +115,7 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
+    startBookingExpiryCleanupService();
   })
   .catch((err) => {
     console.error("❌ MongoDB error:", err);

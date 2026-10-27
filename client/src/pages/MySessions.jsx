@@ -9,6 +9,11 @@ const MySessions = ({ onLogout }) => {
   const [user] = useState(() => JSON.parse(localStorage.getItem("user")) || null)
   const [bookedSessions, setBookedSessions] = useState([])
   const [loadingSessions, setLoadingSessions] = useState(true)
+  const [activetab, setActiveTab]= useState("upcomming");
+  const[sessionToCancel,setSessionToCamcel]=useState(null);
+  const[cancelReason,setCancelReason]=useState("");
+  const[cancelling,setCancelling]=useState(false);
+  const [actionError,setActionError]=useState("");
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const [avatarImage, setAvatarImage] = useState(() => localStorage.getItem("userAvatar") || null)
 
@@ -55,7 +60,10 @@ const MySessions = ({ onLogout }) => {
     navigate("/")
     if (onLogout) onLogout()
   }
-
+  const filteredSessions=bookedSessions.filter((s)=> {
+    const isCancelled = s.status?.toLowerCase()==="cancelled";
+    if(activetab)
+  })
   const formatDate = (dateString) => {
     if (!dateString) return "N/A"
     const date = new Date(dateString)
@@ -101,14 +109,27 @@ const MySessions = ({ onLogout }) => {
             <span>Book New Session</span>
           </button>
         </div>
-
+        <div className="flex border-b border-b border-gray-200 mb-6 gap-2">
+          {
+            [
+              {key:"upcomming", label :"Upcomming", count: upcommingSessions.length},
+               {key:"past", label : "Past", count: pastSessions.length},
+                {key:"past", label : "Past", count: pastSessions.length},
+            ].map((tab)=> (
+              <button key={tab.key}
+              onClick={() =>setActiveTab(tab.key)}
+              className={activetab===tab.key ? "border-b-2..":"...."}>
+                {tab.label}({tab.count})
+                </button>
+            ))}
+        </div>
         {loadingSessions ? (
           <div className="flex justify-center items-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200/80">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        ) : bookedSessions.length > 0 ? (
+        ) : displayedSessions.length > 0 ? (
           <div className="grid gap-4">
-            {bookedSessions.map((session, index) => (
+            {displayedSessions.map((session, index) => (
               <div
                 key={session._id || index}
                 className="bg-white rounded-2xl border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-md"
